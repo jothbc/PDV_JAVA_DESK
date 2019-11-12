@@ -1,0 +1,14 @@
+ALTER TABLE `oprincipiodb`.`pagamento_pdv` 
+ADD COLUMN `parcial_crediario` DOUBLE NULL DEFAULT 0 AFTER `data_pago`;
+
+
+//////////////////////////////////////////////////////////
+create table historiro_cred(
+    id int not null auto_increment primary key,
+    nome varchar(200),
+    valor double,
+    dia date
+);
+
+//////////////////
+tabela venda_pdv clientes =0 colocar=1
