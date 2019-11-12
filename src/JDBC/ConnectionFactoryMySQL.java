@@ -16,15 +16,15 @@ import java.sql.SQLException;
  *
  * Classe responsável pela conexão com o banco de dados MySQL
  *
- * Database: estoque User: root Password: ""
+ * 
  *
  */
 public class ConnectionFactoryMySQL {
 
     private static final String DRIVER = "com.mysql.jdbc.Driver";
     private static final String URL = "jdbc:mysql://localhost/oprincipiodb";
-    private static final String USER = "grasi";
-    private static final String PASS = "56628426";
+    private static final String USER = "root";
+    private static final String PASS = "";
 
     public static Connection getConnection() {
         try {
