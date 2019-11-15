@@ -38,7 +38,7 @@ import net.sf.jasperreports.view.JasperViewer;
 public class RelatorioVendas extends javax.swing.JFrame {
 
     DefaultTableModel tableVenda, tablePOS, tableCred;
-    List<Venda_Bean> paraRelatorio;
+    List<ItemRelatorio> paraRelatorio;
 
     /**
      * Creates new form RelatorioVendas
@@ -564,41 +564,42 @@ public class RelatorioVendas extends javax.swing.JFrame {
         double valor_em_crediario = 0;
         double valor_desconto = 0;
 
-        List<Parcela> parcelas = new Venda_DAO().getParcelas_Periodo(CDate.DataPTBRtoDataMySQL(inicio), CDate.DataPTBRtoDataMySQL(fim));
-        if (!parcelas.isEmpty()) {
-            for (Parcela p : parcelas) {
-                valor_em_pos += p.getValor();
-                Object[] dado = {p.getMov(), "POS", p.getData(), p.getValor()};
-                tablePOS.addRow(dado);
+        //List<Crediario> crediarios = new Venda_DAO().findAll_CrediarioData(CDate.DataPTBRtoDataMySQL(inicio), CDate.DataPTBRtoDataMySQL(fim));
+        List<Venda_Bean> vendas_periodo = new Venda_DAO().getVendasPorData(CDate.DataPTBRtoDataMySQL(inicio), CDate.DataPTBRtoDataMySQL(fim), false);
+        if (!vendas_periodo.isEmpty()) {
+            for (Venda_Bean v : vendas_periodo) {
+                Object[] dado = {v.getMovimento(), v.getCliente().getNome(), Conv.validarValue(v.getTotal()), Conv.validarValue(v.getDesconto()), Conv.validarValue(v.getTotal() - v.getDesconto()), v.getData()};
+                tableVenda.addRow(dado);
+                valor_desconto += v.getDesconto();
+                valor_venda_total += v.getTotal();
+                valor_em_dinheiro += v.getDinheiro() - v.getTroco();
+                if (v.getDinheiro() - v.getTroco() > 0) {
+                    /*
+                    Isso me garante que para o meu relatório eu vou informar
+                    as vendas que foram recebidas em dinheiro, pois é a necessidade do cliente.
+                    Vendas recebidas em forma de crediário nao entram necessáriamente no relatório
+                    pois esses valores ainda nao foram recebidos no periodo.
+                     */
+                    paraRelatorio.add(new ItemRelatorio(ItemRelatorio.TIPO_DINHEIRO, v.getMovimento(), v.getDinheiro() - v.getTroco(), v.getData(), v.getCliente().getNome()));
+                }
             }
         }
-        //List<Crediario> crediarios = new Venda_DAO().findAll_CrediarioData(CDate.DataPTBRtoDataMySQL(inicio), CDate.DataPTBRtoDataMySQL(fim));
         List<Historico_Cred> hist_cred = new Historico_CredDAO().getHistPeriodo(inicio, fim);
         if (!hist_cred.isEmpty()) {
             for (Historico_Cred h : hist_cred) {
                 Object[] dado = {h.getCliente().getNome(), h.getData(), "R$ " + Conv.validarValue(h.getValor())};
                 tableCred.addRow(dado);
                 valor_em_crediario += h.getValor();
+                paraRelatorio.add(new ItemRelatorio(ItemRelatorio.TIPO_CREDIARIO,0,h.getValor(),h.getData(),h.getCliente().getNome()));
             }
         }
-
-        List<Venda_Bean> vendas_periodo = new Venda_DAO().getVendasPorData(CDate.DataPTBRtoDataMySQL(inicio), CDate.DataPTBRtoDataMySQL(fim), false);
-        paraRelatorio = vendas_periodo;
-//        if (!crediarios.isEmpty()) {
-//            for (Crediario c : crediarios) {
-//                valor__em_crediario += c.getValor();
-//                Object[] dado = {c.getMov(), "Crediário", c.getDataPago(), c.getValor()};
-//                tb2.addRow(dado);
-//            }
-//        }
-
-        if (!vendas_periodo.isEmpty()) {
-            for (Venda_Bean v : vendas_periodo) {
-                Object[] dado = {v.getMovimento(), v.getCliente().getNome(), Conv.validarValue(v.getTotal()),Conv.validarValue(v.getDesconto()),Conv.validarValue(v.getTotal()-v.getDesconto()), v.getData()};
-                tableVenda.addRow(dado);
-                valor_desconto += v.getDesconto();
-                valor_venda_total += v.getTotal();
-                valor_em_dinheiro += v.getDinheiro() - v.getTroco();
+        List<Parcela> parcelas = new Venda_DAO().getParcelas_Periodo(CDate.DataPTBRtoDataMySQL(inicio), CDate.DataPTBRtoDataMySQL(fim));
+        if (!parcelas.isEmpty()) {
+            for (Parcela p : parcelas) {
+                valor_em_pos += p.getValor();
+                Object[] dado = {p.getMov(), "POS", p.getData(), p.getValor()};
+                tablePOS.addRow(dado);
+                paraRelatorio.add(new ItemRelatorio(ItemRelatorio.TIPO_POS, p.getMov(), p.getValor(), p.getData(), p.getNome_cliente()));
             }
         }
         valorReal_dinheirotxt.setText("R$ " + Conv.validarValue(valor_em_dinheiro));
@@ -609,8 +610,8 @@ public class RelatorioVendas extends javax.swing.JFrame {
         valorReal_totaltxt.setText("R$ " + Conv.validarValue((valor_em_dinheiro + valor_em_pos + valor_em_crediario)));
         valorReal_descontostxt.setText("R$ " + Conv.validarValue(valor_desconto));
         quantidadeVendastxt.setText(Integer.toString(tableVenda.getRowCount()));
-        txt_valor_total_bruto.setText("R$ "+Conv.validarValue(valor_venda_total));
-        valorReal_c_descontos.setText("R$ "+Conv.validarValue(valor_venda_total-valor_desconto));
+        txt_valor_total_bruto.setText("R$ " + Conv.validarValue(valor_venda_total));
+        valorReal_c_descontos.setText("R$ " + Conv.validarValue(valor_venda_total - valor_desconto));
 
     }
 
@@ -635,17 +636,22 @@ public class RelatorioVendas extends javax.swing.JFrame {
 
     private void imprimirRelatorio() {
         try {
-            String src = "C:\\RelatorioVendas.jasper";
+            String src = "res/RelatorioVendas.jasper";
             JasperPrint js;
+            /*
+                para nao dar erro quando abrir o relatorio caso o "paraRelatorio" seja nulo
+                é instanciado novamente e adicionado uma venda vazia.
+             */
             if (paraRelatorio == null) {
                 paraRelatorio = new ArrayList<>();
-                paraRelatorio.add(new Venda_Bean());
+                paraRelatorio.add(new ItemRelatorio());
             }
             JRBeanCollectionDataSource ds = new JRBeanCollectionDataSource(paraRelatorio);
+
             HashMap<String, Object> map = new HashMap<>();
             map.put("inicial", iniciotxt.getText());
             map.put("final", fimtxt.getText());
-            map.put("v_bruto_vendas", txt_valor_total_bruto.getText());
+            map.put("v_bruto_vendas", valorReal_c_descontos.getText());
             map.put("vendas_periodo", quantidadeVendastxt.getText());
             map.put("v_liquido_dinheiro", valorReal_dinheirotxt.getText());
             map.put("v_liquido_crediario", valorReal_crediariotxt.getText());

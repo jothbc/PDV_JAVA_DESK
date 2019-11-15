@@ -155,7 +155,7 @@ public class Venda_DAO {
      * @param descontarParcial
      * @return
      */
-    public List<Venda_Bean> findAll_VendasPorCliente(int ClienteID,boolean descontarParcial) {
+    public List<Venda_Bean> findAll_VendasPorCliente(int ClienteID, boolean descontarParcial) {
         List<Venda_Bean> vendas = new ArrayList<>();
         String sql = "Select * from venda_pdv WHERE id_cliente = ?";
         PreparedStatement stmt = null;
@@ -168,11 +168,11 @@ public class Venda_DAO {
             while (rs.next()) {
                 if (rs.isFirst()) {
                     mov = rs.getInt("movimento");
-                    vendas.add(getVendaPrivate(mov,descontarParcial));
+                    vendas.add(getVendaPrivate(mov, descontarParcial));
                 } else {
                     if (rs.getInt("movimento") != mov) {
                         mov = rs.getInt("movimento");
-                        vendas.add(getVendaPrivate(mov,descontarParcial));
+                        vendas.add(getVendaPrivate(mov, descontarParcial));
                     }
                 }
             }
@@ -560,6 +560,25 @@ public class Venda_DAO {
                 Parcela p = new Parcela(CDate.DataMySQLtoDataStringPT(rs.getString("parcela_data")), rs.getDouble("valor_parcela"));
                 p.setMov(rs.getInt("movimento"));
                 parcelas.add(p);
+            }
+            if (!parcelas.isEmpty()) {
+                for (Parcela p : parcelas) {
+                    sql = "SELECT id_cliente FROM venda_pdv WHERE movimento =?";
+                    stmt = con.prepareStatement(sql);
+                    stmt.setInt(1, p.getMov());
+                    rs = stmt.executeQuery();
+                    while (rs.next()) {
+                        sql = "SELECT nome FROM cliente WHERE id = ?";
+                        PreparedStatement st = con.prepareStatement(sql);
+                        st.setInt(1, rs.getInt("id_cliente"));
+                        ResultSet r = st.executeQuery();
+                        while (r.next()) {
+                            p.setNome_cliente(r.getString("nome"));
+                        }
+                        r.close();
+                        st.close();
+                    }
+                }
             }
         } catch (SQLException ex) {
             Logger.getLogger(Venda_DAO.class.getName()).log(Level.SEVERE, null, ex);

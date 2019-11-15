@@ -28,9 +28,9 @@ public class ImprimirIreport {
         Connection c = ConnectionFactoryMySQL.getConnection();
         String src;
         if (cred) {
-            src = "C:\\CrediarioJs.jasper";
+            src = "res/CrediarioJs.jasper";
         } else {
-            src = "C:\\CupomJs.jasper";
+            src = "res/CupomJs.jasper";
         }
         JasperPrint js;
         HashMap<String, Object> map = new HashMap<>();
@@ -51,19 +51,19 @@ public class ImprimirIreport {
         String src;
         switch (i) {
             case 1:
-                src = "C:\\RelatórioTotal.jasper";
+                src = "res/RelatórioTotal.jasper";
                 break;
             case 2:
-                src = "C:\\RelatórioPositivo.jasper";
+                src = "res/RelatórioPositivo.jasper";
                 break;
             case 3:
-                src = "C:\\RelatórioNegativo.jasper";
+                src = "res/RelatórioNegativo.jasper";
                 break;
             case 4:
-                src = "C:\\RelatórioMinimo.jasper";
+                src = "res/RelatórioMinimo.jasper";
                 break;
             default:
-                src = "C:\\RelatórioTotal.jasper";
+                src = "res/RelatórioTotal.jasper";
                 break;
         }
         JasperPrint js;

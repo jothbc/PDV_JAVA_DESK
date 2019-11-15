@@ -13,6 +13,7 @@ public class Parcela {
     private int mov;
     private String data;
     private double valor;
+    private String nome_cliente;
 
     public Parcela(String data, double valor) {
         this.data = data;
@@ -59,6 +60,20 @@ public class Parcela {
      */
     public void setMov(int mov) {
         this.mov = mov;
+    }
+
+    /**
+     * @return the nome_cliente
+     */
+    public String getNome_cliente() {
+        return nome_cliente;
+    }
+
+    /**
+     * @param nome_cliente the nome_cliente to set
+     */
+    public void setNome_cliente(String nome_cliente) {
+        this.nome_cliente = nome_cliente;
     }
     
 }
